@@ -38,7 +38,7 @@ function isExternalPath(path, name, settings) {
   return !path || folders.some(folder => -1 < path.indexOf(join(folder, packageName)))
 }
 
-const externalModuleRegExp = /^\w/
+const externalModuleRegExp = /^(\w)|(@+\/)|(~+\/)/
 function isExternalModule(name, settings, path) {
   return externalModuleRegExp.test(name) && isExternalPath(path, name, settings)
 }
