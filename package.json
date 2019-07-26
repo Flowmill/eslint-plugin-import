@@ -1,6 +1,6 @@
 {
-  "name": "eslint-plugin-import",
-  "version": "2.17.4",
+  "name": "eslint-plugin-import-flowmill",
+  "version": "2.17.5",
   "description": "Import with sanity.",
   "engines": {
     "node": ">=4"
@@ -27,7 +27,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/benmosher/eslint-plugin-import"
+    "url": "https://github.com/Flowmill/eslint-plugin-import"
   },
   "keywords": [
     "eslint",
@@ -41,9 +41,9 @@
   "author": "Ben Mosher <me@benmosher.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/benmosher/eslint-plugin-import/issues"
+    "url": "https://github.com/Flowmill/eslint-plugin-import/issues"
   },
-  "homepage": "https://github.com/benmosher/eslint-plugin-import",
+  "homepage": "https://github.com/Flowmill/eslint-plugin-import",
   "devDependencies": {
     "@typescript-eslint/parser": "^1.5.0",
     "babel-eslint": "^8.2.6",
