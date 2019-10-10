@@ -52,7 +52,7 @@ export function isExternalModuleMain(name, settings, path) {
   );
 }
 
-const scopedRegExp = /^@\/[^/]+/;
+const scopedRegExp = /^@[^/]+\/[^/]+/;
 function isScoped(name) {
   return scopedRegExp.test(name);
 }
@@ -60,6 +60,11 @@ function isScoped(name) {
 const scopedMainRegExp = /^@[^/]+\/?[^/]+$/;
 export function isScopedMain(name) {
   return scopedMainRegExp.test(name);
+}
+
+const scopedRootRegExp = /^@\/[^/]+/;
+function isScopedRoot(name) {
+  return scopedRootRegExp.test(name);
 }
 
 function isInternalModule(name, settings, path) {
@@ -95,6 +100,9 @@ function typeTest(name, settings, path) {
     return "external";
   }
   if (isScoped(name, settings, path)) {
+    return "external";
+  }
+  if (isScopedRoot(name, settings, path)) {
     return "internal";
   }
   if (isRelativeToParent(name, settings, path)) {
