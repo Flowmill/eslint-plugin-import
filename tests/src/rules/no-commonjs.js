@@ -1,4 +1,6 @@
 import { RuleTester } from 'eslint'
+import eslintPkg from 'eslint/package.json'
+import semver from 'semver'
 
 const EXPORT_MESSAGE = 'Expected "export" or "export default"'
     , IMPORT_MESSAGE = 'Expected "import" instead of "require()"'
@@ -9,14 +11,14 @@ ruleTester.run('no-commonjs', require('rules/no-commonjs'), {
   valid: [
 
     // imports
-    { code: 'import "x";', parserOptions: { sourceType: 'module' } },
-    { code: 'import x from "x"', parserOptions: { sourceType: 'module' } },
-    { code: 'import x from "x"', parserOptions: { sourceType: 'module' } },
-    { code: 'import { x } from "x"', parserOptions: { sourceType: 'module' } },
+    { code: 'import "x";', parserOptions: { ecmaVersion: 2015, sourceType: 'module' } },
+    { code: 'import x from "x"', parserOptions: { ecmaVersion: 2015, sourceType: 'module' } },
+    { code: 'import x from "x"', parserOptions: { ecmaVersion: 2015, sourceType: 'module' } },
+    { code: 'import { x } from "x"', parserOptions: { ecmaVersion: 2015, sourceType: 'module' } },
 
     // exports
-    { code: 'export default "x"', parserOptions: { sourceType: 'module' } },
-    { code: 'export function house() {}', parserOptions: { sourceType: 'module' } },
+    { code: 'export default "x"', parserOptions: { ecmaVersion: 2015, sourceType: 'module' } },
+    { code: 'export function house() {}', parserOptions: { ecmaVersion: 2015, sourceType: 'module' } },
     {
       code:
       'function someFunc() {\n'+
@@ -24,7 +26,7 @@ ruleTester.run('no-commonjs', require('rules/no-commonjs'), {
       '\n'+
       '  expect(exports.someProp).toEqual({ a: \'value\' });\n'+
       '}',
-      parserOptions: { sourceType: 'module' },
+      parserOptions: { ecmaVersion: 2015, sourceType: 'module' },
     },
 
     // allowed requires
@@ -59,9 +61,11 @@ ruleTester.run('no-commonjs', require('rules/no-commonjs'), {
   invalid: [
 
     // imports
-    { code: 'var x = require("x")', errors: [ { message: IMPORT_MESSAGE }] },
-    { code: 'x = require("x")', errors: [ { message: IMPORT_MESSAGE }] },
-    { code: 'require("x")', errors: [ { message: IMPORT_MESSAGE }] },
+    ...(semver.satisfies(eslintPkg.version, '< 4.0.0') ? [] : [
+      { code: 'var x = require("x")', errors: [ { message: IMPORT_MESSAGE }] },
+      { code: 'x = require("x")', errors: [ { message: IMPORT_MESSAGE }] },
+      { code: 'require("x")', errors: [ { message: IMPORT_MESSAGE }] },
+    ]),
 
     // exports
     { code: 'exports.face = "palm"', errors: [ { message: EXPORT_MESSAGE }] },

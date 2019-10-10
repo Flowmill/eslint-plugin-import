@@ -7,6 +7,10 @@
 import Exports from '../ExportMap'
 import resolve from 'eslint-module-utils/resolve'
 import docsUrl from '../docsUrl'
+import { dirname, join } from 'path'
+import readPkgUp from 'read-pkg-up'
+import values from 'object.values'
+import includes from 'array-includes'
 
 // eslint/lib/util/glob-util has been moved to eslint/lib/util/glob-utils with version 5.3
 // and has been moved to eslint/lib/cli-engine/file-enumerator in version 6
@@ -15,7 +19,10 @@ try {
   var FileEnumerator = require('eslint/lib/cli-engine/file-enumerator').FileEnumerator
   listFilesToProcess = function (src) {
     var e = new FileEnumerator()
-    return Array.from(e.iterateFiles(src))
+    return Array.from(e.iterateFiles(src), ({ filePath, ignored }) => ({
+      ignored,
+      filename: filePath,
+    }))
   }
 } catch (e1) {
   try {
@@ -33,12 +40,14 @@ const IMPORT_NAMESPACE_SPECIFIER = 'ImportNamespaceSpecifier'
 const IMPORT_DEFAULT_SPECIFIER = 'ImportDefaultSpecifier'
 const VARIABLE_DECLARATION = 'VariableDeclaration'
 const FUNCTION_DECLARATION = 'FunctionDeclaration'
+const CLASS_DECLARATION = 'ClassDeclaration'
 const DEFAULT = 'default'
 
 let preparationDone = false
 const importList = new Map()
 const exportList = new Map()
 const ignoredFiles = new Set()
+const filesOutsideSrc = new Set()
 
 const isNodeModule = path => {
   return /\/(node_modules)\//.test(path)
@@ -76,7 +85,7 @@ const prepareImportsAndExports = (srcFiles, context) => {
     if (currentExports) {
       const { dependencies, reexports, imports: localImportList, namespace  } = currentExports
 
-      // dependencies === export * from 
+      // dependencies === export * from
       const currentExportAll = new Set()
       dependencies.forEach(value => {
         currentExportAll.add(value().path)
@@ -142,7 +151,7 @@ const prepareImportsAndExports = (srcFiles, context) => {
 }
 
 /**
- * traverse through all imports and add the respective path to the whereUsed-list 
+ * traverse through all imports and add the respective path to the whereUsed-list
  * of the corresponding export
  */
 const determineUsage = () => {
@@ -184,8 +193,9 @@ const getSrc = src => {
  * prepare the lists of existing imports and exports - should only be executed once at
  * the start of a new eslint run
  */
+let srcFiles
 const doPreparation = (src, ignoreExports, context) => {
-  const srcFiles = resolveFiles(getSrc(src), ignoreExports)
+  srcFiles = resolveFiles(getSrc(src), ignoreExports)
   prepareImportsAndExports(srcFiles, context)
   determineUsage()
   preparationDone = true
@@ -196,6 +206,58 @@ const newNamespaceImportExists = specifiers =>
 
 const newDefaultImportExists = specifiers =>
   specifiers.some(({ type }) => type === IMPORT_DEFAULT_SPECIFIER)
+
+const fileIsInPkg = file => {
+  const { path, pkg } = readPkgUp.sync({cwd: file, normalize: false})
+  const basePath = dirname(path)
+
+  const checkPkgFieldString = pkgField => {
+    if (join(basePath, pkgField) === file) {
+        return true
+      }
+  }
+
+  const checkPkgFieldObject = pkgField => {
+      const pkgFieldFiles = values(pkgField).map(value => join(basePath, value))
+      if (includes(pkgFieldFiles, file)) {
+        return true
+      }
+  }
+
+  const checkPkgField = pkgField => {
+    if (typeof pkgField === 'string') {
+      return checkPkgFieldString(pkgField)
+    }
+
+    if (typeof pkgField === 'object') {
+      return checkPkgFieldObject(pkgField)
+    }
+  }
+
+  if (pkg.private === true) {
+    return false
+  }
+
+  if (pkg.bin) {
+    if (checkPkgField(pkg.bin)) {
+      return true
+    }
+  }
+
+  if (pkg.browser) {
+    if (checkPkgField(pkg.browser)) {
+      return true
+    }
+  }
+
+  if (pkg.main) {
+    if (checkPkgFieldString(pkg.main)) {
+      return true
+    }
+  }
+
+  return false
+}
 
 module.exports = {
   meta: {
@@ -311,17 +373,26 @@ module.exports = {
         return
       }
 
-      // refresh list of source files
-      const srcFiles = resolveFiles(getSrc(src), ignoreExports)
+      if (fileIsInPkg(file)) {
+        return
+      }
+
+      if (filesOutsideSrc.has(file)) {
+        return
+      }
 
       // make sure file to be linted is included in source files
       if (!srcFiles.has(file)) {
-        return
+        srcFiles = resolveFiles(getSrc(src), ignoreExports)
+        if (!srcFiles.has(file)) {
+          filesOutsideSrc.add(file)
+          return
+        }
       }
 
       exports = exportList.get(file)
 
-      // special case: export * from 
+      // special case: export * from
       const exportAll = exports.get(EXPORT_ALL_DECLARATION)
       if (typeof exportAll !== 'undefined' && exportedValue !== IMPORT_DEFAULT_SPECIFIER) {
         if (exportAll.whereUsed.size > 0) {
@@ -358,7 +429,7 @@ module.exports = {
 
     /**
      * only useful for tools like vscode-eslint
-     * 
+     *
      * update lists of existing exports during runtime
      */
     const updateExportUsage = node => {
@@ -380,7 +451,7 @@ module.exports = {
       node.body.forEach(({ type, declaration, specifiers }) => {
         if (type === EXPORT_DEFAULT_DECLARATION) {
           newExportIdentifiers.add(IMPORT_DEFAULT_SPECIFIER)
-        } 
+        }
         if (type === EXPORT_NAMED_DECLARATION) {
           if (specifiers.length > 0) {
             specifiers.forEach(specifier => {
@@ -390,9 +461,12 @@ module.exports = {
             })
           }
           if (declaration) {
-            if (declaration.type === FUNCTION_DECLARATION) {
+            if (
+              declaration.type === FUNCTION_DECLARATION ||
+              declaration.type === CLASS_DECLARATION
+            ) {
               newExportIdentifiers.add(declaration.id.name)
-            }   
+            }
             if (declaration.type === VARIABLE_DECLARATION) {
               declaration.declarations.forEach(({ id }) => {
                 newExportIdentifiers.add(id.name)
@@ -431,7 +505,7 @@ module.exports = {
 
     /**
      * only useful for tools like vscode-eslint
-     * 
+     *
      * update lists of existing imports during runtime
      */
     const updateImportUsage = node => {
@@ -712,7 +786,10 @@ module.exports = {
             checkUsage(node, specifier.exported.name)
         })
         if (node.declaration) {
-          if (node.declaration.type === FUNCTION_DECLARATION) {
+          if (
+            node.declaration.type === FUNCTION_DECLARATION ||
+            node.declaration.type === CLASS_DECLARATION
+          ) {
             checkUsage(node, node.declaration.id.name)
           }
           if (node.declaration.type === VARIABLE_DECLARATION) {

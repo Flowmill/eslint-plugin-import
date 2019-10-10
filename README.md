@@ -81,7 +81,7 @@ This plugin intends to support linting of ES2015+ (ES6+) import/export syntax, a
 * Ensure all imports appear before other statements ([`first`])
 * Ensure all exports appear after other statements ([`exports-last`])
 * Report repeated import of the same module in multiple places ([`no-duplicates`])
-* Report namespace imports ([`no-namespace`])
+* Forbid namespace (a.k.a. "wildcard" `*`) imports ([`no-namespace`])
 * Ensure consistent use of file extension within the import path ([`extensions`])
 * Enforce a convention in module import order ([`order`])
 * Enforce a newline after import statements ([`newline-after-import`])
@@ -111,6 +111,10 @@ This plugin intends to support linting of ES2015+ (ES6+) import/export syntax, a
 [`no-default-export`]: ./docs/rules/no-default-export.md
 [`no-named-export`]: ./docs/rules/no-named-export.md
 [`dynamic-import-chunkname`]: ./docs/rules/dynamic-import-chunkname.md
+
+## Support
+
+[Get supported eslint-plugin-import with the Tidelift Subscription](https://tidelift.com/subscription/pkg/npm-eslint-plugin-import?utm_source=npm-eslint-plugin-import&utm_medium=referral&utm_campaign=readme)
 
 ## Installation
 

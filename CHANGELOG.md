@@ -5,6 +5,46 @@ This change log adheres to standards from [Keep a CHANGELOG](http://keepachangel
 
 ## [Unreleased]
 
+### Added
+- [`group-exports`]: make aggregate module exports valid ([#1472], thanks [@atikenny])
+- [`no-namespace`]: Make rule fixable ([#1401], thanks [@TrevorBurnham])
+- support `parseForESLint` from custom parser ([#1435], thanks [@JounQin])
+- [`no-extraneous-dependencies`]: Implement support for [bundledDependencies](https://npm.github.io/using-pkgs-docs/package-json/types/bundleddependencies.html) ([#1436], thanks [@schmidsi]))
+
+### Fixed
+- `default`: make error message less confusing ([#1470], thanks [@golopot])
+- Support export of a merged typescript namespace declaration ([#1495], thanks [@benmunro])
+- [`import/order`]: fix autofix to not move imports across fn calls ([#1253], thanks [@tihonove])
+
+## [2.18.2] - 2019-07-19
+- Skip warning on type interfaces ([#1425], thanks [@lencioni])
+
+## [2.18.1] - 2019-07-18
+
+### Fixed
+- Improve parse perf when using `@typescript-eslint/parser` ([#1409], thanks [@bradzacher])
+- [`prefer-default-export`]: don't warn on TypeAlias & TSTypeAliasDeclaration ([#1377], thanks [@sharmilajesupaul])
+- [`no-unused-modules`]: Exclude package "main"/"bin"/"browser" entry points ([#1404], thanks [@rfermann])
+- [`export`]: false positive for typescript overloads ([#1412], thanks [@golopot])
+
+### Refactors
+ - [`no-extraneous-dependencies`], `importType`: remove lodash ([#1419], thanks [@ljharb])
+
+## [2.18.0] - 2019-06-24
+
+### Added
+- Support eslint v6 ([#1393], thanks [@sheepsteak])
+- [`order`]: Adds support for correctly sorting unknown types into a single group ([#1375], thanks [@swernerx])
+- [`order`]: add fixer for destructuring commonjs import ([#1372], thanks [@golopot])
+- typescript config: add TS def extensions + defer to TS over JS ([#1366], thanks [@benmosher])
+
+### Fixed
+- [`no-unused-modules`]: handle ClassDeclaration ([#1371], thanks [@golopot])
+
+### Docs
+- [`no-cycle`]: split code examples so file separation is obvious ([#1370], thanks [@alex-page])
+- [`no-named-as-default-member`]: update broken link ([#1389], thanks [@fooloomanzoo])
+
 ## [2.17.3] - 2019-05-23
 
 ### Fixed
@@ -36,7 +76,6 @@ This change log adheres to standards from [Keep a CHANGELOG](http://keepachangel
 ## [2.17.0] - 2019-04-13
 
 ### Added
-- Autofixer for [`no-duplicates`] rule ([#1312], thanks [@lydell])
 - [`no-useless-path-segments`]: Add `noUselessIndex` option ([#1290], thanks [@timkraut])
 - [`no-duplicates`]: Add autofix ([#1312], thanks [@lydell])
 - Add [`no-unused-modules`] rule ([#1142], thanks [@rfermann])
@@ -430,7 +469,7 @@ memoizing parser, and takes only 27s with naked `babel-eslint` (thus, reparsing 
   something that looks like an `export` is detected in the module content.
 
 ## [1.2.0] - 2016-03-19
-Thanks @lencioni for identifying a huge amount of rework in resolve and kicking
+Thanks [@lencioni] for identifying a huge amount of rework in resolve and kicking
 off a bunch of memoization.
 
 I'm seeing 62% improvement over my normal test codebase when executing only
@@ -570,6 +609,24 @@ for info on changes for earlier releases.
 
 [`memo-parser`]: ./memo-parser/README.md
 
+[#1495]: https://github.com/benmosher/eslint-plugin-import/pull/1495
+[#1472]: https://github.com/benmosher/eslint-plugin-import/pull/1472
+[#1470]: https://github.com/benmosher/eslint-plugin-import/pull/1470
+[#1436]: https://github.com/benmosher/eslint-plugin-import/pull/1436
+[#1435]: https://github.com/benmosher/eslint-plugin-import/pull/1435
+[#1425]: https://github.com/benmosher/eslint-plugin-import/pull/1425
+[#1419]: https://github.com/benmosher/eslint-plugin-import/pull/1419
+[#1412]: https://github.com/benmosher/eslint-plugin-import/pull/1412
+[#1409]: https://github.com/benmosher/eslint-plugin-import/pull/1409
+[#1404]: https://github.com/benmosher/eslint-plugin-import/pull/1404
+[#1401]: https://github.com/benmosher/eslint-plugin-import/pull/1401
+[#1393]: https://github.com/benmosher/eslint-plugin-import/pull/1393
+[#1389]: https://github.com/benmosher/eslint-plugin-import/pull/1389
+[#1377]: https://github.com/benmosher/eslint-plugin-import/pull/1377
+[#1375]: https://github.com/benmosher/eslint-plugin-import/pull/1375
+[#1372]: https://github.com/benmosher/eslint-plugin-import/pull/1372
+[#1371]: https://github.com/benmosher/eslint-plugin-import/pull/1371
+[#1370]: https://github.com/benmosher/eslint-plugin-import/pull/1370
 [#1363]: https://github.com/benmosher/eslint-plugin-import/pull/1363
 [#1358]: https://github.com/benmosher/eslint-plugin-import/pull/1358
 [#1356]: https://github.com/benmosher/eslint-plugin-import/pull/1356
@@ -593,6 +650,7 @@ for info on changes for earlier releases.
 [#1290]: https://github.com/benmosher/eslint-plugin-import/pull/1290
 [#1277]: https://github.com/benmosher/eslint-plugin-import/pull/1277
 [#1257]: https://github.com/benmosher/eslint-plugin-import/pull/1257
+[#1253]: https://github.com/benmosher/eslint-plugin-import/pull/1253
 [#1235]: https://github.com/benmosher/eslint-plugin-import/pull/1235
 [#1234]: https://github.com/benmosher/eslint-plugin-import/pull/1234
 [#1232]: https://github.com/benmosher/eslint-plugin-import/pull/1232
@@ -688,6 +746,7 @@ for info on changes for earlier releases.
 [#164]: https://github.com/benmosher/eslint-plugin-import/pull/164
 [#157]: https://github.com/benmosher/eslint-plugin-import/pull/157
 
+[#1366]: https://github.com/benmosher/eslint-plugin-import/issues/1366
 [#1334]: https://github.com/benmosher/eslint-plugin-import/issues/1334
 [#1323]: https://github.com/benmosher/eslint-plugin-import/issues/1323
 [#1322]: https://github.com/benmosher/eslint-plugin-import/issues/1322
@@ -770,7 +829,13 @@ for info on changes for earlier releases.
 [#119]: https://github.com/benmosher/eslint-plugin-import/issues/119
 [#89]: https://github.com/benmosher/eslint-plugin-import/issues/89
 
-[Unreleased]: https://github.com/benmosher/eslint-plugin-import/compare/v2.17.0...HEAD
+[Unreleased]: https://github.com/benmosher/eslint-plugin-import/compare/v2.18.2...HEAD
+[2.18.2]: https://github.com/benmosher/eslint-plugin-import/compare/v2.18.1...v2.18.2
+[2.18.1]: https://github.com/benmosher/eslint-plugin-import/compare/v2.18.0...v2.18.1
+[2.18.0]: https://github.com/benmosher/eslint-plugin-import/compare/v2.17.3...v2.18.0
+[2.17.3]: https://github.com/benmosher/eslint-plugin-import/compare/v2.17.2...v2.17.3
+[2.17.2]: https://github.com/benmosher/eslint-plugin-import/compare/v2.17.1...v2.17.2
+[2.17.1]: https://github.com/benmosher/eslint-plugin-import/compare/v2.17.0...v2.17.1
 [2.17.0]: https://github.com/benmosher/eslint-plugin-import/compare/v2.16.0...v2.17.0
 [2.16.0]: https://github.com/benmosher/eslint-plugin-import/compare/v2.15.0...v2.16.0
 [2.15.0]: https://github.com/benmosher/eslint-plugin-import/compare/v2.14.0...v2.15.0
@@ -919,3 +984,15 @@ for info on changes for earlier releases.
 [@charlessuh]: https://github.com/charlessuh
 [@kgregory]: https://github.com/kgregory
 [@christophercurrie]: https://github.com/christophercurrie
+[@alex-page]: https://github.com/alex-page
+[@benmosher]: https://github.com/benmosher
+[@fooloomanzoo]: https://github.com/fooloomanzoo
+[@sheepsteak]: https://github.com/sheepsteak
+[@sharmilajesupaul]: https://github.com/sharmilajesupaul
+[@lencioni]: https://github.com/lencioni
+[@JounQin]: https://github.com/JounQin
+[@atikenny]: https://github.com/atikenny
+[@schmidsi]: https://github.com/schmidsi
+[@TrevorBurnham]: https://github.com/TrevorBurnham
+[@benmunro]: https://github.com/benmunro
+[@tihonove]: https://github.com/tihonove

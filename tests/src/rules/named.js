@@ -1,7 +1,5 @@
-import { test, SYNTAX_CASES } from '../utils'
+import { test, SYNTAX_CASES, getTSParsers } from '../utils'
 import { RuleTester } from 'eslint'
-import eslintPkg from 'eslint/package.json'
-import semver from 'semver'
 
 import { CASE_SENSITIVE_FS } from 'eslint-module-utils/resolve'
 
@@ -55,11 +53,11 @@ ruleTester.run('named', rule, {
     // es7
     test({
       code: 'export bar, { foo } from "./bar"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'import { foo, bar } from "./named-trampoline"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
 
     // regression tests
@@ -74,43 +72,43 @@ ruleTester.run('named', rule, {
     // should ignore imported/exported flow types, even if they don’t exist
     test({
       code: 'import type { MissingType } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'import typeof { MissingType } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'import type { MyOpaqueType } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'import typeof { MyOpaqueType } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'import { type MyOpaqueType, MyClass } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'import { typeof MyOpaqueType, MyClass } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'import typeof MissingType from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'import typeof * as MissingType from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'export type { MissingType } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'export type { MyOpaqueType } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
 
     // jsnext
@@ -188,18 +186,18 @@ ruleTester.run('named', rule, {
     // es7
     test({
       code: 'export bar2, { bar } from "./bar"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
       errors: ["bar not found in './bar'"],
     }),
     test({
       code: 'import { foo, bar, baz } from "./named-trampoline"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
       errors: ["baz not found in './named-trampoline'"],
     }),
     test({
       code: 'import { baz } from "./broken-trampoline"',
-      parser: 'babel-eslint',
-      errors: ["baz not found via broken-trampoline.js -> named-exports.js"],
+      parser: require.resolve('babel-eslint'),
+      errors: ['baz not found via broken-trampoline.js -> named-exports.js'],
     }),
 
     // parse errors
@@ -214,7 +212,7 @@ ruleTester.run('named', rule, {
 
     test({
       code: 'import  { type MyOpaqueType, MyMissingClass } from "./flowtypes"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
       errors: ["MyMissingClass not found in './flowtypes'"],
     }),
 
@@ -285,15 +283,8 @@ ruleTester.run('named (export *)', rule, {
 
 
 context('Typescript', function () {
-  // Typescript
-  const parsers = ['typescript-eslint-parser']
-
-  if (semver.satisfies(eslintPkg.version, '>5.0.0')) {
-    parsers.push('@typescript-eslint/parser')
-  }
-
-  parsers.forEach((parser) => {
-    ['typescript', 'typescript-declare', 'typescript-export-assign'].forEach((source) => {
+  getTSParsers().forEach((parser) => {
+    ['typescript', 'typescript-declare', 'typescript-export-assign', 'typescript-export-assign-merged'].forEach((source) => {
       ruleTester.run(`named`, rule, {
         valid: [
           test({

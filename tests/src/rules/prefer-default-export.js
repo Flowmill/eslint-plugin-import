@@ -1,4 +1,4 @@
-import { test } from '../utils'
+import { test, getNonDefaultParsers } from '../utils'
 
 import { RuleTester } from 'eslint'
 
@@ -45,6 +45,10 @@ ruleTester.run('prefer-default-export', rule, {
       }),
     test({
       code: `
+        export const [a, b] = item;`,
+      }),
+    test({
+      code: `
         let item;
         export const foo = item;
         export { item };`,
@@ -60,7 +64,7 @@ ruleTester.run('prefer-default-export', rule, {
       }),
     test({
       code: `export Memory, { MemoryValue } from './Memory'`,
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
       }),
 
     // no exports at all
@@ -71,19 +75,18 @@ ruleTester.run('prefer-default-export', rule, {
 
     test({
       code: `export type UserId = number;`,
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
       }),
 
     // issue #653
     test({
       code: 'export default from "foo.js"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
     test({
       code: 'export { a, b } from "foo.js"',
-      parser: 'babel-eslint',
+      parser: require.resolve('babel-eslint'),
     }),
-
     // ...SYNTAX_CASES,
   ],
   invalid: [
@@ -128,5 +131,71 @@ ruleTester.run('prefer-default-export', rule, {
         message: 'Prefer default export.',
       }],
     }),
+    test({
+      code: `
+        export const [a] = ["foo"]`,
+      errors: [{
+        ruleId: 'ExportNamedDeclaration',
+        message: 'Prefer default export.',
+      }],
+    }),
   ],
+})
+
+context('Typescript', function() {
+  getNonDefaultParsers().forEach((parser) => {
+    const parserConfig = {
+      parser: parser,
+      settings: {
+        'import/parsers': { [parser]: ['.ts'] },
+        'import/resolver': { 'eslint-import-resolver-typescript': true },
+      },
+    }
+
+    ruleTester.run('prefer-default-export', rule, {
+      valid: [
+        // Exporting types
+        test(
+          {
+            code: `
+        export type foo = string;
+        export type bar = number;`,
+            parser,
+          },
+          parserConfig,
+        ),
+        test(
+          {
+            code: `
+        export type foo = string;
+        export type bar = number;`,
+            parser,
+          },
+          parserConfig,
+        ),
+        test(
+          {
+            code: 'export type foo = string',
+            parser,
+          },
+          parserConfig,
+        ),
+        test(
+          {
+            code: 'export type foo = string',
+            parser,
+          },
+          parserConfig,
+        ),
+        test (
+          {
+            code: 'export interface foo { bar: string; }',
+            parser,
+          },
+          parserConfig,
+        ),
+      ],
+      invalid: [],
+    })
+  })
 })

@@ -1,7 +1,6 @@
 import { test, testFilePath } from '../utils'
 
 import { RuleTester } from 'eslint'
-import { expect } from 'chai'
 import fs from 'fs'
 
 const ruleTester = new RuleTester()
@@ -35,6 +34,8 @@ ruleTester.run('no-unused-modules', rule, {
            code: 'const a = 1; const b = 2; export { a, b }'}),
     test({ options: missingExportsOptions,
            code: 'const a = 1; export default a'}),
+    test({ options: missingExportsOptions,
+           code: 'export class Foo {}'}),
   ],
   invalid: [
     test({
@@ -67,6 +68,9 @@ ruleTester.run('no-unused-modules', rule, {
     test({ options: unusedExportsOptions,
            code: 'export function d() { return 4 }',
            filename: testFilePath('./no-unused-modules/file-d.js')}),
+    test({ options: unusedExportsOptions,
+           code: 'export class q { q0() {} }',
+           filename: testFilePath('./no-unused-modules/file-q.js')}),
     test({ options: unusedExportsOptions,
            code: 'const e0 = 5; export { e0 as e }',
            filename: testFilePath('./no-unused-modules/file-e.js')}),
@@ -133,13 +137,17 @@ ruleTester.run('no-unused-modules', rule, {
            filename: testFilePath('./no-unused-modules/file-j.js'),
            errors: [error(`exported declaration 'j' not used within other modules`)]}),
     test({ options: unusedExportsOptions,
+           code: 'export class q { q0() {} }',
+           filename: testFilePath('./no-unused-modules/file-q.js'),
+           errors: [error(`exported declaration 'q' not used within other modules`)]}),
+    test({ options: unusedExportsOptions,
            code: 'const k0 = 5; export { k0 as k }',
            filename: testFilePath('./no-unused-modules/file-k.js'),
            errors: [error(`exported declaration 'k' not used within other modules`)]}),
   ],
 })
 
-// // test for export from 
+// // test for export from
 ruleTester.run('no-unused-modules', rule, {
   valid: [],
   invalid: [
@@ -601,4 +609,32 @@ ruleTester.run('no-unused-modules', rule, {
             filename: testFilePath('../jsx/named.jsx')}),
   ],
   invalid: [],
+})
+
+describe('do not report unused export for files mentioned in package.json', () => {
+  ruleTester.run('no-unused-modules', rule, {
+    valid: [
+      test({ options: unusedExportsOptions,
+             code: 'export const bin = "bin"',
+             filename: testFilePath('./no-unused-modules/bin.js')}),
+      test({ options: unusedExportsOptions,
+             code: 'export const binObject = "binObject"',
+             filename: testFilePath('./no-unused-modules/binObject/index.js')}),
+      test({ options: unusedExportsOptions,
+             code: 'export const browser = "browser"',
+             filename: testFilePath('./no-unused-modules/browser.js')}),
+      test({ options: unusedExportsOptions,
+             code: 'export const browserObject = "browserObject"',
+             filename: testFilePath('./no-unused-modules/browserObject/index.js')}),
+      test({ options: unusedExportsOptions,
+             code: 'export const main = "main"',
+             filename: testFilePath('./no-unused-modules/main/index.js')}),
+    ],
+    invalid: [
+      test({ options: unusedExportsOptions,
+             code: 'export const privatePkg = "privatePkg"',
+             filename: testFilePath('./no-unused-modules/privatePkg/index.js'),
+             errors: [error(`exported declaration 'privatePkg' not used within other modules`)]}),
+    ],
+  })
 })

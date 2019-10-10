@@ -1,4 +1,4 @@
-import { test, SYNTAX_CASES } from '../utils'
+import { test, SYNTAX_CASES, getTSParsers } from '../utils'
 
 import { RuleTester } from 'eslint'
 
@@ -15,16 +15,16 @@ ruleTester.run('no-deprecated', rule, {
 
     test({
       code: "import { fn } from './deprecated'",
-      settings: { 'import/docstyle': ['tomdoc'] }
+      settings: { 'import/docstyle': ['tomdoc'] },
     }),
 
     test({
       code: "import { fine } from './tomdoc-deprecated'",
-      settings: { 'import/docstyle': ['tomdoc'] }
+      settings: { 'import/docstyle': ['tomdoc'] },
     }),
     test({
       code: "import { _undocumented } from './tomdoc-deprecated'",
-      settings: { 'import/docstyle': ['tomdoc'] }
+      settings: { 'import/docstyle': ['tomdoc'] },
     }),
 
     // naked namespace is fine
@@ -70,7 +70,7 @@ ruleTester.run('no-deprecated', rule, {
     test({
       code: "import { fn } from './tomdoc-deprecated'",
       settings: { 'import/docstyle': ['tomdoc'] },
-      errors: ["Deprecated: This function is terrible."],
+      errors: ['Deprecated: This function is terrible.'],
     }),
 
     test({
@@ -196,4 +196,33 @@ ruleTester.run('no-deprecated: hoisting', rule, {
     }),
 
   ],
+})
+
+describe('Typescript', function () {
+  getTSParsers().forEach((parser) => {
+    const parserConfig = {
+      parser: parser,
+      settings: {
+        'import/parsers': { [parser]: ['.ts'] },
+        'import/resolver': { 'eslint-import-resolver-typescript': true },
+      },
+    }
+
+    ruleTester.run(parser, rule, {
+      valid: [
+        test(Object.assign({
+          code: 'import * as hasDeprecated from \'./ts-deprecated.ts\'',
+        }, parserConfig)),
+      ],
+      invalid: [
+        test(Object.assign({
+          code: 'import { foo } from \'./ts-deprecated.ts\'; console.log(foo())',
+          errors: [
+            { type: 'ImportSpecifier', message: 'Deprecated: don\'t use this!' },
+            { type: 'Identifier', message: 'Deprecated: don\'t use this!' },
+          ]},
+          parserConfig)),
+      ],
+    })
+  })
 })

@@ -140,7 +140,8 @@ function isPlainRequireModule(node) {
     return false
   }
   const decl = node.declarations[0]
-  const result = (decl.id != null &&  decl.id.type === 'Identifier') &&
+  const result = decl.id &&
+    (decl.id.type === 'Identifier' || decl.id.type === 'ObjectPattern') &&
     decl.init != null &&
     decl.init.type === 'CallExpression' &&
     decl.init.callee != null &&
@@ -161,8 +162,10 @@ function canCrossNodeWhileReorder(node) {
 
 function canReorderItems(firstNode, secondNode) {
   const parent = firstNode.parent
-  const firstIndex = parent.body.indexOf(firstNode)
-  const secondIndex = parent.body.indexOf(secondNode)
+  const [firstIndex, secondIndex] = [
+    parent.body.indexOf(firstNode),
+    parent.body.indexOf(secondNode),
+  ].sort()
   const nodesBetween = parent.body.slice(firstIndex, secondIndex + 1)
   for (var nodeBetween of nodesBetween) {
     if (!canCrossNodeWhileReorder(nodeBetween)) {
@@ -258,7 +261,7 @@ function isInVariableDeclarator(node) {
     (node.type === 'VariableDeclarator' || isInVariableDeclarator(node.parent))
 }
 
-const types = ['builtin', 'external', 'internal', 'parent', 'sibling', 'index']
+const types = ['builtin', 'external', 'internal', 'unknown', 'parent', 'sibling', 'index']
 
 // Creates an object with type-rank pairs.
 // Example: { index: 0, sibling: 1, parent: 1, external: 1, builtin: 2, internal: 2 }

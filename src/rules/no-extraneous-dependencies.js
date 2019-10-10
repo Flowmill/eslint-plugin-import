@@ -1,6 +1,5 @@
 import path from 'path'
 import fs from 'fs'
-import { isArray, isEmpty } from 'lodash'
 import readPkgUp from 'read-pkg-up'
 import minimatch from 'minimatch'
 import resolve from 'eslint-module-utils/resolve'
@@ -12,12 +11,19 @@ function hasKeys(obj = {}) {
   return Object.keys(obj).length > 0
 }
 
+function arrayOrKeys(arrayOrObject) {
+  return Array.isArray(arrayOrObject) ? arrayOrObject : Object.keys(arrayOrObject)
+}
+
 function extractDepFields(pkg) {
   return {
     dependencies: pkg.dependencies || {},
     devDependencies: pkg.devDependencies || {},
     optionalDependencies: pkg.optionalDependencies || {},
     peerDependencies: pkg.peerDependencies || {},
+    // BundledDeps should be in the form of an array, but object notation is also supported by
+    // `npm`, so we convert it to an array if it is an object
+    bundledDependencies: arrayOrKeys(pkg.bundleDependencies || pkg.bundledDependencies || [])
   }
 }
 
@@ -29,17 +35,18 @@ function getDependencies(context, packageDir) {
       devDependencies: {},
       optionalDependencies: {},
       peerDependencies: {},
+      bundledDependencies: [],
     }
 
-    if (!isEmpty(packageDir)) {
-      if (!isArray(packageDir)) {
+    if (packageDir && packageDir.length > 0) {
+      if (!Array.isArray(packageDir)) {
         paths = [path.resolve(packageDir)]
       } else {
         paths = packageDir.map(dir => path.resolve(dir))
       }
     }
 
-    if (!isEmpty(paths)) {
+    if (paths.length > 0) {
       // use rule config to find package.json
       paths.forEach(dir => {
         const _packageContent = extractDepFields(
@@ -64,13 +71,14 @@ function getDependencies(context, packageDir) {
       packageContent.devDependencies,
       packageContent.optionalDependencies,
       packageContent.peerDependencies,
+      packageContent.bundledDependencies,
     ].some(hasKeys)) {
       return null
     }
 
     return packageContent
   } catch (e) {
-    if (!isEmpty(paths) && e.code === 'ENOENT') {
+    if (paths.length > 0 && e.code === 'ENOENT') {
       context.report({
         message: 'The package.json file could not be found.',
         loc: { line: 0, column: 0 },
@@ -122,11 +130,13 @@ function reportIfMissing(context, deps, depsOptions, node, name) {
   const isInDevDeps = deps.devDependencies[packageName] !== undefined
   const isInOptDeps = deps.optionalDependencies[packageName] !== undefined
   const isInPeerDeps = deps.peerDependencies[packageName] !== undefined
+  const isInBundledDeps = deps.bundledDependencies.indexOf(packageName) !== -1
 
   if (isInDeps ||
     (depsOptions.allowDevDeps && isInDevDeps) ||
     (depsOptions.allowPeerDeps && isInPeerDeps) ||
-    (depsOptions.allowOptDeps && isInOptDeps)
+    (depsOptions.allowOptDeps && isInOptDeps) ||
+    (depsOptions.allowBundledDeps && isInBundledDeps)
   ) {
     return
   }
@@ -170,6 +180,7 @@ module.exports = {
           'devDependencies': { 'type': ['boolean', 'array'] },
           'optionalDependencies': { 'type': ['boolean', 'array'] },
           'peerDependencies': { 'type': ['boolean', 'array'] },
+          'bundledDependencies': { 'type': ['boolean', 'array'] },
           'packageDir': { 'type': ['string', 'array'] },
         },
         'additionalProperties': false,
@@ -186,6 +197,7 @@ module.exports = {
       allowDevDeps: testConfig(options.devDependencies, filename) !== false,
       allowOptDeps: testConfig(options.optionalDependencies, filename) !== false,
       allowPeerDeps: testConfig(options.peerDependencies, filename) !== false,
+      allowBundledDeps: testConfig(options.bundledDependencies, filename) !== false,
     }
 
     // todo: use module visitor from module-utils core

@@ -23,7 +23,10 @@ module.exports = {
           .forEach(function(property) {
             captureDeclaration(property.value)
           })
-      } else {
+      } else if (identifierOrPattern.type === 'ArrayPattern') {
+        identifierOrPattern.elements
+          .forEach(captureDeclaration)
+      } else  {
       // assume it's a single standard identifier
         specifierExportCount++
       }
@@ -47,8 +50,19 @@ module.exports = {
         // if there are specifiers, node.declaration should be null
         if (!node.declaration) return
 
-        // don't count flow types exports
+        // don't warn on single type aliases, declarations, or interfaces
         if (node.exportKind === 'type') return
+
+        const { type } = node.declaration
+
+        if (
+          type === 'TSTypeAliasDeclaration' ||
+          type === 'TypeAlias' ||
+          type === 'TSInterfaceDeclaration' ||
+          type === 'InterfaceDeclaration'
+        ) {
+          return
+        }
 
         if (node.declaration.declarations) {
           node.declaration.declarations.forEach(function(declaration) {

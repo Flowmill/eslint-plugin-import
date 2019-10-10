@@ -1,8 +1,6 @@
-import { test, SYNTAX_CASES } from '../utils'
+import { test, SYNTAX_CASES, getTSParsers } from '../utils'
 
 import { RuleTester } from 'eslint'
-import eslintPkg from 'eslint/package.json'
-import semver from 'semver'
 
 var ruleTester = new RuleTester()
   , rule = require('rules/export')
@@ -111,14 +109,7 @@ ruleTester.run('export', rule, {
 
 
 context('Typescript', function () {
-  // Typescript
-  const parsers = ['typescript-eslint-parser']
-
-  if (semver.satisfies(eslintPkg.version, '>5.0.0')) {
-    parsers.push('@typescript-eslint/parser')
-  }
-
-  parsers.forEach((parser) => {
+  getTSParsers().forEach((parser) => {
     const parserConfig = {
       parser: parser,
       settings: {
@@ -140,6 +131,14 @@ context('Typescript', function () {
           code: `
             export const Foo = 1;
             export interface Foo {}
+          `,
+        }, parserConfig)),
+
+        test(Object.assign({
+          code: `
+            export function fff(a: string);
+            export function fff(a: number);
+            export function fff(a: string|number) {};
           `,
         }, parserConfig)),
 

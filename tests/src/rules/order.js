@@ -1,4 +1,4 @@
-import { test, testVersion } from '../utils'
+import { test, getTSParsers } from '../utils'
 
 import { RuleTester } from 'eslint'
 
@@ -164,6 +164,46 @@ ruleTester.run('order', rule, {
         var index = require('./');
       `,
     }),
+    // Addijg unknown import types (e.g. using an resolver alias via babel) to the groups.
+    test({
+      code: `
+        import fs from 'fs';
+        import { Input } from '-/components/Input';
+        import { Button } from '-/components/Button';
+        import { add } from './helper';`,
+      options: [{
+        groups: ['builtin', 'external', 'unknown', 'parent', 'sibling', 'index'],
+      }],
+    }),
+    // Using unknown import types (e.g. using an resolver alias via babel) with
+    // an alternative custom group list.
+    test({
+      code: `
+        import { Input } from '-/components/Input';
+        import { Button } from '-/components/Button';
+        import fs from 'fs';
+        import { add } from './helper';`,
+      options: [{
+        groups: [ 'unknown', 'builtin', 'external', 'parent', 'sibling', 'index' ],
+      }],
+    }),
+    // Using unknown import types (e.g. using an resolver alias via babel)
+    // Option: newlines-between: 'always'
+    test({
+      code: `
+        import fs from 'fs';
+
+        import { Input } from '-/components/Input';
+        import { Button } from '-/components/Button';
+
+        import { add } from './helper';`,
+      options: [
+        {
+          'newlines-between': 'always',
+          groups: ['builtin', 'external', 'unknown', 'parent', 'sibling', 'index'],
+        },
+      ],
+    }),
     // Option: newlines-between: 'always'
     test({
       code: `
@@ -279,7 +319,7 @@ ruleTester.run('order', rule, {
         } from 'bar';
         import external from 'external'
       `,
-      options: [{ 'newlines-between': 'always' }]
+      options: [{ 'newlines-between': 'always' }],
     }),
     // Option newlines-between: 'always' with multiline imports #2
     test({
@@ -290,7 +330,7 @@ ruleTester.run('order', rule, {
 
         import external from 'external'
       `,
-      options: [{ 'newlines-between': 'always' }]
+      options: [{ 'newlines-between': 'always' }],
     }),
     // Option newlines-between: 'always' with multiline imports #3
     test({
@@ -301,7 +341,7 @@ ruleTester.run('order', rule, {
         import bar
           from './sibling';
       `,
-      options: [{ 'newlines-between': 'always' }]
+      options: [{ 'newlines-between': 'always' }],
     }),
     // Option newlines-between: 'always' with not assigned import #1
     test({
@@ -313,7 +353,7 @@ ruleTester.run('order', rule, {
 
         import _ from 'lodash';
       `,
-      options: [{ 'newlines-between': 'always' }]
+      options: [{ 'newlines-between': 'always' }],
     }),
     // Option newlines-between: 'never' with not assigned import #2
     test({
@@ -323,7 +363,7 @@ ruleTester.run('order', rule, {
         import 'something-else';
         import _ from 'lodash';
       `,
-      options: [{ 'newlines-between': 'never' }]
+      options: [{ 'newlines-between': 'never' }],
     }),
     // Option newlines-between: 'always' with not assigned require #1
     test({
@@ -335,7 +375,7 @@ ruleTester.run('order', rule, {
 
         var _ = require('lodash');
       `,
-      options: [{ 'newlines-between': 'always' }]
+      options: [{ 'newlines-between': 'always' }],
     }),
     // Option newlines-between: 'never' with not assigned require #2
     test({
@@ -345,7 +385,7 @@ ruleTester.run('order', rule, {
         require('something-else');
         var _ = require('lodash');
       `,
-      options: [{ 'newlines-between': 'never' }]
+      options: [{ 'newlines-between': 'never' }],
     }),
     // Option newlines-between: 'never' should ignore nested require statement's #1
     test({
@@ -362,7 +402,7 @@ ruleTester.run('order', rule, {
           }
         }
       `,
-      options: [{ 'newlines-between': 'never' }]
+      options: [{ 'newlines-between': 'never' }],
     }),
     // Option newlines-between: 'always' should ignore nested require statement's #2
     test({
@@ -378,7 +418,7 @@ ruleTester.run('order', rule, {
           }
         }
       `,
-      options: [{ 'newlines-between': 'always' }]
+      options: [{ 'newlines-between': 'always' }],
     }),
     // Option: newlines-between: 'always-and-inside-groups'
     test({
@@ -512,6 +552,21 @@ ruleTester.run('order', rule, {
   var async = require('async'); /* multiline2
           comment2 *//* multiline3
           comment3 */
+      `,
+      errors: [{
+        ruleId: 'order',
+        message: '`fs` import should occur before import of `async`',
+      }],
+    }),
+    // fix destructured commonjs import
+    test({
+      code: `
+        var {b} = require('async');
+        var {a} = require('fs');
+      `,
+      output: `
+        var {a} = require('fs');
+        var {b} = require('async');
       `,
       errors: [{
         ruleId: 'order',
@@ -870,6 +925,63 @@ ruleTester.run('order', rule, {
         message: '`fs` import should occur after import of `../foo/bar`',
       }],
     }),
+    // Default order using import with custom import alias
+    test({
+      code: `
+        import { Button } from '-/components/Button';
+        import { add } from './helper';
+        import fs from 'fs';
+      `,
+      output: `
+        import fs from 'fs';
+        import { Button } from '-/components/Button';
+        import { add } from './helper';
+      `,
+      options: [
+        {
+          groups: ['builtin', 'external', 'unknown', 'parent', 'sibling', 'index'],
+        },
+      ],
+      errors: [
+        {
+          line: 4,
+          message: '`fs` import should occur before import of `-/components/Button`',
+        },
+      ],
+    }),
+    // Default order using import with custom import alias
+    test({
+      code: `
+        import fs from 'fs';
+        import { Button } from '-/components/Button';
+        import { LinkButton } from '-/components/Link';
+        import { add } from './helper';
+      `,
+      output: `
+        import fs from 'fs';
+
+        import { Button } from '-/components/Button';
+        import { LinkButton } from '-/components/Link';
+
+        import { add } from './helper';
+      `,
+      options: [
+        {
+          groups: ['builtin', 'external', 'unknown', 'parent', 'sibling', 'index'],
+          'newlines-between': 'always',
+        },
+      ],
+      errors: [
+        {
+          line: 2,
+          message: 'There should be at least one empty line between import groups',
+        },
+        {
+          line: 4,
+          message: 'There should be at least one empty line between import groups',
+        },
+      ],
+    }),
     // Option newlines-between: 'never' - should report unnecessary line between groups
     test({
       code: `
@@ -1153,7 +1265,137 @@ ruleTester.run('order', rule, {
         },
       ],
     }),
+    // reorder fix cannot cross function call on moving below #1
+    test({
+      code: `
+        const local = require('./local');
 
+        fn_call();
+
+        const global1 = require('global1');
+        const global2 = require('global2');
+
+        fn_call();
+      `,
+      output: `
+        const local = require('./local');
+
+        fn_call();
+
+        const global1 = require('global1');
+        const global2 = require('global2');
+
+        fn_call();
+      `,
+      errors: [{
+        ruleId: 'order',
+        message: '`./local` import should occur after import of `global2`',
+      }],
+    }),
+    // reorder fix cannot cross function call on moving below #2
+    test({
+      code: `
+        const local = require('./local');
+        fn_call();
+        const global1 = require('global1');
+        const global2 = require('global2');
+
+        fn_call();
+      `,
+      output: `
+        const local = require('./local');
+        fn_call();
+        const global1 = require('global1');
+        const global2 = require('global2');
+
+        fn_call();
+      `,
+      errors: [{
+        ruleId: 'order',
+        message: '`./local` import should occur after import of `global2`',
+      }],
+    }),
+    // reorder fix cannot cross function call on moving below #3
+    test({
+      code: `
+        const local1 = require('./local1');
+        const local2 = require('./local2');
+        const local3 = require('./local3');
+        const local4 = require('./local4');
+        fn_call();
+        const global1 = require('global1');
+        const global2 = require('global2');
+        const global3 = require('global3');
+        const global4 = require('global4');
+        const global5 = require('global5');
+        fn_call();
+      `,
+      output: `
+        const local1 = require('./local1');
+        const local2 = require('./local2');
+        const local3 = require('./local3');
+        const local4 = require('./local4');
+        fn_call();
+        const global1 = require('global1');
+        const global2 = require('global2');
+        const global3 = require('global3');
+        const global4 = require('global4');
+        const global5 = require('global5');
+        fn_call();
+      `,
+      errors: [
+        '`./local1` import should occur after import of `global5`',
+        '`./local2` import should occur after import of `global5`',
+        '`./local3` import should occur after import of `global5`',
+        '`./local4` import should occur after import of `global5`',
+      ],
+    }),
+    // reorder fix cannot cross function call on moving below
+    test(withoutAutofixOutput({
+      code: `
+        const local = require('./local');
+        const global1 = require('global1');
+        const global2 = require('global2');
+        fn_call();
+        const global3 = require('global3');
+
+        fn_call();
+      `,
+      errors: [{
+        ruleId: 'order',
+        message: '`./local` import should occur after import of `global3`',
+      }],
+    })),
+    // reorder fix cannot cross function call on moving below
+    // fix imports that not crosses function call only
+    test({
+      code: `
+        const local1 = require('./local1');
+        const global1 = require('global1');
+        const global2 = require('global2');
+        fn_call();
+        const local2 = require('./local2');
+        const global3 = require('global3');
+        const global4 = require('global4');
+
+        fn_call();
+      `,
+      output: `
+        const local1 = require('./local1');
+        const global1 = require('global1');
+        const global2 = require('global2');
+        fn_call();
+        const global3 = require('global3');
+        const global4 = require('global4');
+        const local2 = require('./local2');
+
+        fn_call();
+      `,
+      errors: [
+        '`./local1` import should occur after import of `global4`',
+        '`./local2` import should occur after import of `global4`',
+      ],
+    }),
     // reorder fix cannot cross non import or require
     test(withoutAutofixOutput({
       code: `
@@ -1166,6 +1408,33 @@ ruleTester.run('order', rule, {
         message: '`fs` import should occur before import of `async`',
       }],
     })),
+    // reorder fix cannot cross function call on moving below (from #1252)
+    test({
+      code: `
+        const env = require('./config');
+
+        Object.keys(env);
+
+        const http = require('http');
+        const express = require('express');
+
+        http.createServer(express());
+      `,
+      output: `
+        const env = require('./config');
+
+        Object.keys(env);
+
+        const http = require('http');
+        const express = require('express');
+
+        http.createServer(express());
+      `,
+      errors: [{
+        ruleId: 'order',
+        message: '`./config` import should occur after import of `express`',
+      }],
+    }),
     // reorder cannot cross non plain requires
     test(withoutAutofixOutput({
       code: `
@@ -1260,8 +1529,7 @@ ruleTester.run('order', rule, {
         message: '`fs` import should occur before import of `async`',
       }],
     })),
-    // fix incorrect order with typescript-eslint-parser
-    test({
+    ...getTSParsers().map(parser => ({
       code: `
         var async = require('async');
         var fs = require('fs');
@@ -1270,27 +1538,11 @@ ruleTester.run('order', rule, {
         var fs = require('fs');
         var async = require('async');
       `,
-      parser: 'typescript-eslint-parser',
+      parser,
       errors: [{
         ruleId: 'order',
         message: '`fs` import should occur before import of `async`',
       }],
-    }),
-    // fix incorrect order with @typescript-eslint/parser
-    testVersion('>5.0.0', {
-      code: `
-        var async = require('async');
-        var fs = require('fs');
-      `,
-      output: `
-        var fs = require('fs');
-        var async = require('async');
-      `,
-      parser: '@typescript-eslint/parser',
-      errors: [{
-        ruleId: 'order',
-        message: '`fs` import should occur before import of `async`',
-      }],
-    }),
+    })),
   ].filter((t) => !!t),
 })
