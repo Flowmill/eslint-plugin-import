@@ -62,14 +62,11 @@ export function isScopedMain(name) {
   return scopedMainRegExp.test(name);
 }
 
-const scopedRootRegExp = /^@\/[^/]+/;
-function isScopedRoot(name) {
-  return scopedRootRegExp.test(name);
-}
-
 function isInternalModule(name, settings, path) {
   const matchesScopedOrExternalRegExp =
-    scopedRegExp.test(name) || externalModuleRegExp.test(name);
+    scopedRegExp.test(name) ||
+    externalModuleRegExp.test(name) ||
+    /^@\/[^/]+/.test(name);
   return matchesScopedOrExternalRegExp && !isExternalPath(path, name, settings);
 }
 
@@ -101,9 +98,6 @@ function typeTest(name, settings, path) {
   }
   if (isScoped(name, settings, path)) {
     return "external";
-  }
-  if (isScopedRoot(name, settings, path)) {
-    return "internal";
   }
   if (isRelativeToParent(name, settings, path)) {
     return "parent";
